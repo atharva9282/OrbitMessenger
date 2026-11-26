@@ -1,3 +1,59 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
 
-:root{font-family:'DM Sans',sans-serif;color:#e1e2e9;background:#252731;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-optical-sizing:auto;font-weight:400;font-size:14px;--ink:#e1e2e9;--muted:#9b9daa;--line:#3a3c47;--violet:#8780d6;--violet-dark:#756dc8;--soft-violet:#353346;--navy:#1c1e26;--paper:#292b34;--surface:#292b34;--surface-raised:#30323d;--surface-soft:#252730;--text:#e1e2e9;--text-soft:#a1a3b0;--border:#3a3c47;--font-display:'Manrope','DM Sans',sans-serif}*{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;background:var(--surface-soft)}button,input,textarea{font:inherit}button{color:inherit}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #7972c9;outline-offset:2px}button{cursor:pointer}::selection{background:#555078;color:#f5f4ff}
+:root {
+  font-family: "DM Sans", sans-serif;
+  color: #e1e2e9;
+  background: #252731;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-size: 14px;
+  --ink: #e1e2e9;
+  --muted: #9b9daa;
+  --line: #3a3c47;
+  --violet: #8780d6;
+  --violet-dark: #756dc8;
+  --soft-violet: #353346;
+  --navy: #1c1e26;
+  --paper: #292b34;
+  --surface: #292b34;
+  --surface-raised: #30323d;
+  --surface-soft: #252730;
+  --text: #e1e2e9;
+  --text-soft: #a1a3b0;
+  --border: #3a3c47;
+  --font-display: "Manrope", "DM Sans", sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--surface-soft);
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button {
+  color: inherit;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #7972c9;
+  outline-offset: 2px;
+}
+button {
+  cursor: pointer;
+}
+::selection {
+  background: #555078;
+  color: #f5f4ff;
+}
