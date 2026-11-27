@@ -8,16 +8,48 @@ public class Account {
 
     @Id
     @Column(length = 24)
-    public String username;
+    private String username;
 
     @Version
-    public Long version;
+    private Long version;
 
     @Column(nullable = false, length = 50)
-    public String displayName;
+    private String displayName;
 
     @Column(nullable = false, length = 70)
-    public String passwordHash;
+    private String passwordHash;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 
     protected Account(){
 

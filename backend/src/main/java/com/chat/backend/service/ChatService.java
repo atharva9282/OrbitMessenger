@@ -40,14 +40,14 @@ public class ChatService {
         Account account = new Account(data.getUsername(), data.getDisplayName(), encoder.encode(data.getPassword()));
         accounts.saveAndFlush(account);
 
-        return new Person(account.username, account.displayName);
+        return new Person(account.getUsername(), account.getDisplayName());
     }
 
     public Person getPerson(String username)
     {
         Account account = accounts.findById(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        return new Person(account.username, account.displayName);
+        return new Person(account.getUsername(), account.getDisplayName());
     }
 
     public List<Person> search(String query, String currentUsername)
@@ -60,7 +60,7 @@ public class ChatService {
         }
 
         for(Account account: accounts.findTop20ByUsernameStartingWithAndUsernameNotOrderByUsername(prefix, currentUsername)){
-            people.add(new Person(account.username, account.displayName));
+            people.add(new Person(account.getUsername(), account.getDisplayName()));
         }
 
         return people;

@@ -32,8 +32,8 @@ public class SecurityConfig {
         return username -> {
             Account account = accountRepository.findById(username)
                     .orElseThrow(()->new UsernameNotFoundException("Invalid Credentials"));
-            return User.withUsername(account.username)
-                    .password(account.passwordHash).roles("USER")
+            return User.withUsername(account.getUsername())
+                    .password(account.getPasswordHash()).roles("USER")
                     .build();
         };
     }

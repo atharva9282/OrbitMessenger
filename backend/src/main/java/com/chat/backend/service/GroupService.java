@@ -69,16 +69,16 @@ public class GroupService {
                     GroupMember groupMember = groupMemberRepository.saveAndFlush(
                             new GroupMember(createdGroup, memberAccount, GroupRole.MEMBER)
                     );
-                    memberResponses.add(new GroupMemberResponse(memberAccount.username, memberAccount.displayName, GroupRole.MEMBER, groupMember.getJoinedAt()));
+                    memberResponses.add(new GroupMemberResponse(memberAccount.getUsername(), memberAccount.getDisplayName(), GroupRole.MEMBER, groupMember.getJoinedAt()));
                 }
         );
         GroupMember creatorMember = groupMemberRepository.saveAndFlush(new GroupMember(createdGroup, account, GroupRole.ADMIN));
-        memberResponses.add(new GroupMemberResponse(account.username, account.displayName, GroupRole.ADMIN, creatorMember.getJoinedAt()));
+        memberResponses.add(new GroupMemberResponse(account.getUsername(), account.getDisplayName(), GroupRole.ADMIN, creatorMember.getJoinedAt()));
 
         return new GroupResponse(
                 createdGroup.getId(),
                 createdGroup.getName(),
-                createdGroup.getCreatedBy().username,
+                createdGroup.getCreatedBy().getUsername(),
                 createdGroup.getCreatedAt(),
                 request.getMemberUsernames().size()+1,
                 memberResponses,
@@ -100,8 +100,8 @@ public class GroupService {
             List<GroupMemberResponse> memberResponses = groupMembers.stream()
                             .map((m) ->
                                 new GroupMemberResponse(
-                                        m.getAccount().username,
-                                        m.getAccount().displayName,
+                                        m.getAccount().getUsername(),
+                                        m.getAccount().getDisplayName(),
                                         m.getRole(),
                                         m.getJoinedAt()
                                 )
@@ -113,8 +113,8 @@ public class GroupService {
                             .map(m->
                                 new GroupMessageResponse(
                                         m.getId(),
-                                        m.getSender().username,
-                                        m.getSender().displayName,
+                                        m.getSender().getUsername(),
+                                        m.getSender().getDisplayName(),
                                         m.getBody(),
                                         m.getSentAt()
                                 )
@@ -123,7 +123,7 @@ public class GroupService {
             responses.add(new GroupResponse(
                     chatGroup.getId(),
                     chatGroup.getName(),
-                    chatGroup.getCreatedBy().username,
+                    chatGroup.getCreatedBy().getUsername(),
                     chatGroup.getCreatedAt(),
                     groupMembers.size(),
                     memberResponses,
@@ -149,8 +149,8 @@ public class GroupService {
 
         List<GroupMemberResponse> memberResponses = groupMemberRepository.findByGroup_IdOrderByJoinedAtAsc(groupId).stream()
             .map(m-> new GroupMemberResponse(
-                    m.getAccount().username,
-                    m.getAccount().displayName,
+                    m.getAccount().getUsername(),
+                    m.getAccount().getDisplayName(),
                     m.getRole(),
                     m.getJoinedAt()
             )).toList();
@@ -158,8 +158,8 @@ public class GroupService {
         GroupMessageResponse lastMessage = groupMessageRepository.findTopByGroup_IdOrderByIdDesc(groupId)
                 .map(m-> new GroupMessageResponse(
                         m.getId(),
-                        m.getSender().username,
-                        m.getSender().displayName,
+                        m.getSender().getUsername(),
+                        m.getSender().getDisplayName(),
                         m.getBody(),
                         m.getSentAt()
                 )).orElse(null);
@@ -167,7 +167,7 @@ public class GroupService {
         return new GroupResponse(
                 group.getId(),
                 group.getName(),
-                group.getCreatedBy().username,
+                group.getCreatedBy().getUsername(),
                 group.getCreatedAt(),
                 memberResponses.size(),
                 memberResponses,
@@ -186,8 +186,8 @@ public class GroupService {
 
         return groupMemberRepository.findByGroup_IdOrderByJoinedAtAsc(groupId).stream()
                 .map(m-> new GroupMemberResponse(
-                        m.getAccount().username,
-                        m.getAccount().displayName,
+                        m.getAccount().getUsername(),
+                        m.getAccount().getDisplayName(),
                         m.getRole(),
                         m.getJoinedAt()
                 )).toList();
@@ -220,14 +220,14 @@ public class GroupService {
 
         GroupMessageResponse response = new GroupMessageResponse(
                 message.getId(),
-                message.getSender().username,
-                message.getSender().displayName,
+                message.getSender().getUsername(),
+                message.getSender().getDisplayName(),
                 message.getBody(),
                 message.getSentAt()
         );
 
         Set<String> memberUsernames = groupMemberRepository.findByGroup_IdOrderByJoinedAtAsc(groupId).stream()
-                .map(m->m.getAccount().username)
+                .map(m->m.getAccount().getUsername())
                 .collect(Collectors.toSet());
 
         TransactionSynchronizationManager.registerSynchronization(
@@ -261,8 +261,8 @@ public class GroupService {
         return messages.stream()
                 .map(m->new GroupMessageResponse(
                         m.getId(),
-                        m.getSender().username,
-                        m.getSender().displayName,
+                        m.getSender().getUsername(),
+                        m.getSender().getDisplayName(),
                         m.getBody(),
                         m.getSentAt()
                 )).toList();
