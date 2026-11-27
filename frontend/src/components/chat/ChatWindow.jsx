@@ -17,7 +17,7 @@ const fullDate = (value) => {
     : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
 };
 
-function EmptyChat({ onFind }) {
+function EmptyChat({ onFind, group = false }) {
   return (
     <div className="empty-chat">
       <div className="empty-illustration">
@@ -33,15 +33,13 @@ function EmptyChat({ onFind }) {
         <br />
         starts somewhere.
       </h2>
-      <p>Find someone by username and bring them into your orbit.</p>
-      <button className="primary-button" onClick={onFind}>
-        Find someone <span>↗</span>
-      </button>
+      <p>{group ? "Your group is ready. Send the first message to get the conversation going." : "Find someone by username and bring them into your orbit."}</p>
+      {!group && <button className="primary-button" onClick={onFind}>Find someone <span>↗</span></button>}
     </div>
   );
 }
 
-function MessageList({ messages, ownUsername, loading, onFind }) {
+function MessageList({ messages, ownUsername, loading, loadingOlder, canLoadOlder, onLoadOlder, onFind, group }) {
   const endRef = useRef(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -52,9 +50,10 @@ function MessageList({ messages, ownUsername, loading, onFind }) {
         <span className="spinner spinner-dark" /> Finding your conversation…
       </div>
     );
-  if (!messages.length) return <EmptyChat onFind={onFind} />;
+  if (!messages.length) return <EmptyChat onFind={onFind} group={group} />;
   return (
     <div className="message-list">
+      {canLoadOlder && messages.length >= 50 && <button className="load-older-button" onClick={onLoadOlder} disabled={loadingOlder}>{loadingOlder ? "Loading…" : "Load older messages"}</button>}
       {messages.map((message, index) => {
         const own = message.sender === ownUsername;
         const previous = messages[index - 1];
@@ -67,6 +66,7 @@ function MessageList({ messages, ownUsername, loading, onFind }) {
                 <span>{fullDate(message.sentAt)}</span>
               </div>
             )}
+            {group && !own && messages[index - 1]?.sender !== message.sender && <div className="group-sender">{message.senderDisplayName || message.sender}</div>}
             <article
               className={`message ${own ? "message-own" : "message-in"}`}
             >
@@ -141,12 +141,16 @@ export default function ChatWindow({
   me,
   messages,
   loading,
+  loadingOlder,
+  canLoadOlder,
   sending,
   sendError,
   onSend,
+  onLoadOlder,
   onBack,
   connection,
   onFind,
+  onGroupDetails,
   className = "",
 }) {
   if (!active)
@@ -205,11 +209,12 @@ export default function ChatWindow({
         >
           ←
         </button>
-        <Avatar name={active.displayName} username={active.username} />
+        <Avatar name={active.type === "GROUP" ? active.title : active.person?.displayName || active.displayName} username={active.type === "GROUP" ? `group-${active.groupId}` : active.person?.username || active.username} />
         <div className="chat-person">
-          <strong>{active.displayName}</strong>
-          <span>@{active.username}</span>
+          <strong>{active.type === "GROUP" ? active.title : active.person?.displayName || active.displayName}</strong>
+          <span>{active.type === "GROUP" ? `${active.memberCount} members` : `@${active.person?.username || active.username}`}</span>
         </div>
+        {active.type === "GROUP" && <button className="group-details-button" onClick={() => onGroupDetails(active.groupId)}>Details</button>}
         <div className="header-status">
           <span
             className={`live-dot ${connection === "online" ? "" : "dim"}`}
@@ -223,7 +228,7 @@ export default function ChatWindow({
       </header>
       <div className="thread-meta">
         <span className="thread-line" />
-        <span>YOUR CONVERSATION WITH {active.displayName.toUpperCase()}</span>
+        <span>{active.type === "GROUP" ? `MESSAGES IN ${active.title.toUpperCase()}` : `YOUR CONVERSATION WITH ${(active.person?.displayName || active.displayName).toUpperCase()}`}</span>
         <span className="thread-line" />
       </div>
       <div className="message-scroll">
@@ -232,10 +237,14 @@ export default function ChatWindow({
           ownUsername={me.username}
           loading={loading}
           onFind={onFind}
+          group={active.type === "GROUP"}
+          loadingOlder={loadingOlder}
+          canLoadOlder={canLoadOlder}
+          onLoadOlder={onLoadOlder}
         />
       </div>
       <MessageComposer
-        key={active.username}
+        key={active.id || active.username}
         onSend={onSend}
         sending={sending}
         error={sendError}

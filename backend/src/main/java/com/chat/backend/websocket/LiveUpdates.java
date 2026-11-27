@@ -1,5 +1,7 @@
 package com.chat.backend.websocket;
 
+import com.chat.backend.dto.GroupMessageEvent;
+import com.chat.backend.dto.GroupMessageResponse;
 import com.chat.backend.entity.ChatMessage;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Component;
@@ -11,6 +13,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -64,6 +67,40 @@ public class LiveUpdates extends TextWebSocketHandler {
             }
         });
 
+    }
+
+    public void publishGroup(Long groupId, GroupMessageResponse message, Set<String> memberUsernames)
+    {
+        GroupMessageEvent event = new GroupMessageEvent("GROUP_MESSAGE", groupId, message);
+
+        var payload = new TextMessage(mapper.writeValueAsString(event));
+
+        sessions.forEach((id, session)->{
+                    if(!validSession(session)){
+                        sessions.remove(id);
+                        try{
+                            session.close(CloseStatus.POLICY_VIOLATION);
+                        } catch (IOException e) {}
+
+                        return;
+                    }
+
+                    var principal = session.getPrincipal();
+                    if (principal == null || !memberUsernames.contains(principal.getName())) {
+                        return;
+                    }
+
+                    try {
+                        session.sendMessage(payload);
+                    } catch (IOException e) {
+                        sessions.remove(id);
+                        try {
+                            session.close();
+                        } catch (IOException ignored) {}
+                    }
+
+
+                });
     }
 
     public boolean validSession(WebSocketSession socketSession)

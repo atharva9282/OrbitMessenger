@@ -12,21 +12,23 @@ const timeLabel = (value) => {
 };
 
 function ConversationRow({ item, ownUsername, selected, onSelect }) {
+  const isGroup = item.type === "GROUP";
+  const sender = item.chatMessage?.senderDisplayName || item.chatMessage?.sender;
   return (
     <button
-      className={`conversation-row ${selected ? "active" : ""}`}
-      onClick={() => onSelect(item.person)}
+      className={`conversation-row ${isGroup ? "group-row" : ""} ${selected ? "active" : ""}`}
+      onClick={() => onSelect(isGroup ? item : item.person)}
     >
-      <Avatar name={item.person.displayName} username={item.person.username} />
+      <Avatar name={isGroup ? item.title : item.person.displayName} username={isGroup ? `group-${item.groupId}` : item.person.username} />
       <span className="conversation-copy">
-        <span className="conversation-name">{item.person.displayName}</span>
+        <span className="conversation-name">{item.title || item.person.displayName}{isGroup && <small className="group-count">{item.memberCount} members</small>}</span>
         <span className="conversation-preview">
-          {item.chatMessage?.body || "Start a conversation"}
+          {item.chatMessage ? `${isGroup && sender ? `${sender}: ` : ""}${item.chatMessage.body}` : "Start a conversation"}
         </span>
       </span>
       <span className="conversation-meta">
         <time>{timeLabel(item.chatMessage?.sentAt)}</time>
-        {item.chatMessage?.sender === ownUsername && (
+        {!isGroup && item.chatMessage?.sender === ownUsername && (
           <span className="message-check">✓</span>
         )}
       </span>
@@ -37,6 +39,8 @@ function ConversationRow({ item, ownUsername, selected, onSelect }) {
 export default function InboxPane({
   person,
   conversations,
+  filter = "ALL",
+  onFilter = () => {},
   active,
   search,
   onSearch,
@@ -48,15 +52,12 @@ export default function InboxPane({
   onRefresh,
   loading,
   onFind,
+  onCreateGroup,
   connection,
   connectionLabel,
   className = "",
 }) {
-  const filtered = conversations.filter((item) =>
-    `${item.person.displayName} ${item.person.username} ${item.chatMessage?.body || ""}`
-      .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
+  const filtered = conversations.filter((item) => (filter === "ALL" || item.type === filter) && `${item.title || item.person?.displayName || ""} ${item.person?.username || ""} ${item.chatMessage?.body || ""}`.toLowerCase().includes(search.toLowerCase())).sort((a,b) => new Date(b.chatMessage?.sentAt || b.group?.createdAt || 0) - new Date(a.chatMessage?.sentAt || a.group?.createdAt || 0));
   return (
     <section className={`inbox-pane ${className}`}>
       <div className="inbox-top">
@@ -75,6 +76,7 @@ export default function InboxPane({
           >
             ＋
           </button>
+          <button className="create-group-action" onClick={onCreateGroup}>＋ <span>Create group</span></button>
         </div>
         <div className="user-greeting">
           <Avatar
@@ -145,6 +147,7 @@ export default function InboxPane({
         )}
       </div>
       <div className="conversation-section">
+        <div className="conversation-filters">{["ALL", "DIRECT", "GROUP"].map((value) => <button key={value} className={filter === value ? "selected" : ""} onClick={() => onFilter(value)}>{value === "ALL" ? "All" : value === "DIRECT" ? "Direct" : "Groups"}</button>)}</div>
         <div className="list-heading">
           <span className="section-label">RECENT</span>
           <button onClick={onRefresh} title="Refresh conversations">
@@ -166,10 +169,10 @@ export default function InboxPane({
         ) : filtered.length ? (
           filtered.map((item) => (
             <ConversationRow
-              key={item.person.username}
+              key={item.id || item.person.username}
               item={item}
               ownUsername={person.username}
-              selected={active?.username === item.person.username}
+              selected={active?.id === item.id || (active?.type === "DIRECT" && item.type === "DIRECT" && active?.person?.username === item.person.username)}
               onSelect={onSelectPerson}
             />
           ))
