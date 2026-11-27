@@ -33,13 +33,30 @@ function EmptyChat({ onFind, group = false }) {
         <br />
         starts somewhere.
       </h2>
-      <p>{group ? "Your group is ready. Send the first message to get the conversation going." : "Find someone by username and bring them into your orbit."}</p>
-      {!group && <button className="primary-button" onClick={onFind}>Find someone <span>↗</span></button>}
+      <p>
+        {group
+          ? "Your group is ready. Send the first message to get the conversation going."
+          : "Find someone by username and bring them into your orbit."}
+      </p>
+      {!group && (
+        <button className="primary-button" onClick={onFind}>
+          Find someone <span>↗</span>
+        </button>
+      )}
     </div>
   );
 }
 
-function MessageList({ messages, ownUsername, loading, loadingOlder, canLoadOlder, onLoadOlder, onFind, group }) {
+function MessageList({
+  messages,
+  ownUsername,
+  loading,
+  loadingOlder,
+  canLoadOlder,
+  onLoadOlder,
+  onFind,
+  group,
+}) {
   const endRef = useRef(null);
   const messageEdges = useRef({ first: null, last: null, height: 0 });
   useLayoutEffect(() => {
@@ -48,12 +65,24 @@ function MessageList({ messages, ownUsername, loading, loadingOlder, canLoadOlde
     const last = String(messages[messages.length - 1].id);
     const container = endRef.current?.closest(".message-scroll");
     const old = messageEdges.current;
-    if (old.last === last && old.first !== null && old.first !== first && container) {
+    if (
+      old.last === last &&
+      old.first !== null &&
+      old.first !== first &&
+      container
+    ) {
       container.scrollTop += container.scrollHeight - old.height;
     } else if (old.last !== last) {
-      endRef.current?.scrollIntoView({ behavior: old.last === null ? "auto" : "smooth", block: "end" });
+      endRef.current?.scrollIntoView({
+        behavior: old.last === null ? "auto" : "smooth",
+        block: "end",
+      });
     }
-    messageEdges.current = { first, last, height: container?.scrollHeight || 0 };
+    messageEdges.current = {
+      first,
+      last,
+      height: container?.scrollHeight || 0,
+    };
   }, [messages, loading]);
   if (loading)
     return (
@@ -64,20 +93,38 @@ function MessageList({ messages, ownUsername, loading, loadingOlder, canLoadOlde
   if (!messages.length) return <EmptyChat onFind={onFind} group={group} />;
   return (
     <div className="message-list">
-      {canLoadOlder && messages.length >= 50 && <button className="load-older-button" onClick={onLoadOlder} disabled={loadingOlder}>{loadingOlder ? "Loading…" : "Load older messages"}</button>}
+      {canLoadOlder && messages.length >= 50 && (
+        <button
+          className="load-older-button"
+          onClick={onLoadOlder}
+          disabled={loadingOlder}
+        >
+          {loadingOlder ? "Loading…" : "Load older messages"}
+        </button>
+      )}
       {messages.map((message, index) => {
-        const own = String(message.sender ?? "").trim() === String(ownUsername ?? "").trim();
+        const own =
+          String(message.sender ?? "").trim() ===
+          String(ownUsername ?? "").trim();
         const previous = messages[index - 1];
         const showDate =
           !previous || fullDate(previous.sentAt) !== fullDate(message.sentAt);
+
+        const isNewSenderGroup =
+          !previous || previous.sender !== message.sender || showDate;
+
         return (
-          <div key={message.id}>
+          <div className="message-row" key={message.id}>
             {showDate && (
               <div className="date-divider">
                 <span>{fullDate(message.sentAt)}</span>
               </div>
             )}
-            {group && !own && messages[index - 1]?.sender !== message.sender && <div className="group-sender">{message.senderDisplayName || message.sender}</div>}
+            {group && isNewSenderGroup && (
+              <div className={`group-sender ${own ? "group-sender-own" : ""}`}>
+                {own ? "You" : message.senderDisplayName || message.sender}
+              </div>
+            )}
             <article
               className={`message ${own ? "message-own" : "message-in"}`}
             >
@@ -220,12 +267,38 @@ export default function ChatWindow({
         >
           ←
         </button>
-        <Avatar name={active.type === "GROUP" ? active.title : active.person?.displayName || active.displayName} username={active.type === "GROUP" ? `group-${active.groupId}` : active.person?.username || active.username} />
+        <Avatar
+          name={
+            active.type === "GROUP"
+              ? active.title
+              : active.person?.displayName || active.displayName
+          }
+          username={
+            active.type === "GROUP"
+              ? `group-${active.groupId}`
+              : active.person?.username || active.username
+          }
+        />
         <div className="chat-person">
-          <strong>{active.type === "GROUP" ? active.title : active.person?.displayName || active.displayName}</strong>
-          <span>{active.type === "GROUP" ? `${active.memberCount} members` : `@${active.person?.username || active.username}`}</span>
+          <strong>
+            {active.type === "GROUP"
+              ? active.title
+              : active.person?.displayName || active.displayName}
+          </strong>
+          <span>
+            {active.type === "GROUP"
+              ? `${active.memberCount} members`
+              : `@${active.person?.username || active.username}`}
+          </span>
         </div>
-        {active.type === "GROUP" && <button className="group-details-button" onClick={() => onGroupDetails(active.groupId)}>Details</button>}
+        {active.type === "GROUP" && (
+          <button
+            className="group-details-button"
+            onClick={() => onGroupDetails(active.groupId)}
+          >
+            Details
+          </button>
+        )}
         <div className="header-status">
           <span
             className={`live-dot ${connection === "online" ? "" : "dim"}`}
@@ -239,7 +312,11 @@ export default function ChatWindow({
       </header>
       <div className="thread-meta">
         <span className="thread-line" />
-        <span>{active.type === "GROUP" ? `MESSAGES IN ${active.title.toUpperCase()}` : `YOUR CONVERSATION WITH ${(active.person?.displayName || active.displayName).toUpperCase()}`}</span>
+        <span>
+          {active.type === "GROUP"
+            ? `MESSAGES IN ${active.title.toUpperCase()}`
+            : `YOUR CONVERSATION WITH ${(active.person?.displayName || active.displayName).toUpperCase()}`}
+        </span>
         <span className="thread-line" />
       </div>
       <div className="message-scroll">
