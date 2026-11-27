@@ -1,5 +1,5 @@
-const initials = (name = "") =>
-  name
+const initials = (name) =>
+  (typeof name === "string" ? name.trim() : "")
     .split(/\s+/)
     .map((part) => part[0])
     .join("")
@@ -7,9 +7,13 @@ const initials = (name = "") =>
     .toUpperCase() || "?";
 
 export default function Avatar({ name, username, size = "" }) {
+  const label = typeof name === "string" ? name.trim() : "";
+  const identity = typeof username === "string" && username.trim()
+    ? username.trim()
+    : label || "orbit";
   const hues = [248, 202, 328, 164, 28, 275];
   const hue =
-    [...(username || name || "orbit")].reduce(
+    [...identity].reduce(
       (sum, char) => sum + char.charCodeAt(0),
       0,
     ) % hues.length;
@@ -17,7 +21,7 @@ export default function Avatar({ name, username, size = "" }) {
     <div
       className={`avatar ${size}`}
       style={{ "--avatar-hue": hues[hue] }}
-      aria-label={name}
+      aria-label={label || "User"}
     >
       {initials(name)}
     </div>
