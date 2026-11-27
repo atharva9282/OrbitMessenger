@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Avatar from "../common/Avatar";
 
 const timeLabel = (value) => {
@@ -41,8 +41,19 @@ function EmptyChat({ onFind, group = false }) {
 
 function MessageList({ messages, ownUsername, loading, loadingOlder, canLoadOlder, onLoadOlder, onFind, group }) {
   const endRef = useRef(null);
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  const messageEdges = useRef({ first: null, last: null, height: 0 });
+  useLayoutEffect(() => {
+    if (loading || !messages.length) return;
+    const first = String(messages[0].id);
+    const last = String(messages[messages.length - 1].id);
+    const container = endRef.current?.closest(".message-scroll");
+    const old = messageEdges.current;
+    if (old.last === last && old.first !== null && old.first !== first && container) {
+      container.scrollTop += container.scrollHeight - old.height;
+    } else if (old.last !== last) {
+      endRef.current?.scrollIntoView({ behavior: old.last === null ? "auto" : "smooth", block: "end" });
+    }
+    messageEdges.current = { first, last, height: container?.scrollHeight || 0 };
   }, [messages, loading]);
   if (loading)
     return (
@@ -55,7 +66,7 @@ function MessageList({ messages, ownUsername, loading, loadingOlder, canLoadOlde
     <div className="message-list">
       {canLoadOlder && messages.length >= 50 && <button className="load-older-button" onClick={onLoadOlder} disabled={loadingOlder}>{loadingOlder ? "Loading…" : "Load older messages"}</button>}
       {messages.map((message, index) => {
-        const own = message.sender === ownUsername;
+        const own = String(message.sender ?? "").trim() === String(ownUsername ?? "").trim();
         const previous = messages[index - 1];
         const showDate =
           !previous || fullDate(previous.sentAt) !== fullDate(message.sentAt);
@@ -233,6 +244,7 @@ export default function ChatWindow({
       </div>
       <div className="message-scroll">
         <MessageList
+          key={active.id}
           messages={messages}
           ownUsername={me.username}
           loading={loading}

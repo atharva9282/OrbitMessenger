@@ -9,8 +9,8 @@ export const groupService = {
     }),
   details: (groupId) => api(`/api/groups/${groupId}`),
   members: (groupId) => api(`/api/groups/${groupId}/members`),
-  history: async (groupId, before = "9223372036854775807") =>
-    (await api(`/api/groups/${groupId}/messages?before=${before}`)).reverse(),
+  history: (groupId, before = "9223372036854775807") =>
+    api(`/api/groups/${groupId}/messages?before=${before}`),
   send: (groupId, body) =>
     api(`/api/groups/${groupId}/messages`, {
       method: "POST",

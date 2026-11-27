@@ -76,7 +76,7 @@ export default function InboxPane({
           >
             ＋
           </button>
-          <button className="create-group-action" onClick={onCreateGroup}>＋ <span>Create group</span></button>
+          <button className="create-group-action" onClick={onCreateGroup} title="Create group" aria-label="Create group"><svg aria-hidden="true" viewBox="0 0 20 20"><circle cx="7" cy="6" r="3"/><path d="M1.8 15.5c.4-3 2.3-4.5 5.2-4.5 1.5 0 2.7.4 3.6 1.2M14.5 9.5v7M11 13h7"/></svg><span className="create-group-label">Create group</span></button>
         </div>
         <div className="user-greeting">
           <Avatar

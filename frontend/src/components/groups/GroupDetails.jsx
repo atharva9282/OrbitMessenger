@@ -1,20 +1,28 @@
 import { useEffect, useState } from "react";
 import Avatar from "../common/Avatar";
 
-const dateLabel = (value) =>
-  value
-    ? new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
-        new Date(value),
-      )
+const dateLabel = (value) => {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime())
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(date)
     : "—";
+};
 
-export default function GroupDetails({ groupId, onClose, getDetails }) {
+export default function GroupDetails({ groupId, onClose, getDetails, getMembers }) {
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
   const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const invalidId = groupId == null || !Number.isFinite(Number(groupId));
+  const creator = members.find((member) => member.username === group?.createdBy);
   useEffect(() => {
+    if (invalidId) return undefined;
     let alive = true;
-    Promise.all([getDetails(groupId), getDetails(groupId, true)])
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKeyDown);
+    Promise.all([getDetails(groupId), getMembers(groupId)])
       .then(([details, list]) => {
         if (alive) {
           setGroup(details);
@@ -28,8 +36,11 @@ export default function GroupDetails({ groupId, onClose, getDetails }) {
       );
     return () => {
       alive = false;
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
     };
-  }, [groupId, getDetails]);
+  }, [groupId, getDetails, getMembers, attempt, invalidId, onClose]);
+  const retry = () => { setGroup(null); setMembers([]); setError(""); setAttempt((value) => value + 1); };
   return (
     <div
       className="group-overlay"
@@ -51,12 +62,10 @@ export default function GroupDetails({ groupId, onClose, getDetails }) {
             ×
           </button>
         </header>
-        {error ? (
-          <p className="group-error" role="alert">
-            {error}
-          </p>
+        {error || invalidId ? (
+          <div className="group-error-state" role="alert"><p>{invalidId ? "This group could not be identified." : error}</p><button className="group-secondary" onClick={retry} disabled={invalidId}>Try again</button></div>
         ) : !group ? (
-          <div className="group-muted">Loading group details…</div>
+          <div className="group-details-loading" aria-label="Loading group details"><i/><i/><i/><i/></div>
         ) : (
           <>
             <div className="group-detail-hero">
@@ -67,12 +76,12 @@ export default function GroupDetails({ groupId, onClose, getDetails }) {
               />
               <div>
                 <strong>{group.name}</strong>
-                <span>{members.length || group.memberCount} members</span>
+                <span>{members.length} members</span>
               </div>
             </div>
             <div className="group-facts">
               <span>Created by</span>
-              <strong>{group.createdBy}</strong>
+              <strong>{creator ? `${creator.displayName} (@${creator.username})` : group.createdBy}</strong>
               <span>Created</span>
               <strong>{dateLabel(group.createdAt)}</strong>
             </div>
