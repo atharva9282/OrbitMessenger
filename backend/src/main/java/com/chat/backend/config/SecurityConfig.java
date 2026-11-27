@@ -1,6 +1,5 @@
 package com.chat.backend.config;
 
-import com.chat.backend.entity.Account;
 import com.chat.backend.repo.AccountRepository;
 import com.chat.backend.websocket.LiveUpdates;
 import org.springframework.context.annotation.Bean;
@@ -19,21 +18,19 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 @Configuration
 public class SecurityConfig {
 
-
     @Bean
-    PasswordEncoder encoder()
-    {
+    PasswordEncoder encoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public UserDetailsService user(AccountRepository accountRepository)
-    {
+    public UserDetailsService user(AccountRepository accountRepository) {
         return username -> {
-            Account account = accountRepository.findById(username)
-                    .orElseThrow(()->new UsernameNotFoundException("Invalid Credentials"));
+            var account = accountRepository.findById(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("Invalid Credentials"));
             return User.withUsername(account.getUsername())
-                    .password(account.getPasswordHash()).roles("USER")
+                    .password(account.getPasswordHash())
+                    .roles("USER")
                     .build();
         };
     }
@@ -43,6 +40,11 @@ public class SecurityConfig {
         return http
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // Public frontend assets: visitors must reach the login screen.
+                        .requestMatchers(
+                                "/", "/index.html", "/assets/**",
+                                "/favicon.svg", "/icons.svg", "/robots.txt"
+                        ).permitAll()
                         .requestMatchers("/api/csrf", "/api/register", "/api/login", "/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
@@ -65,7 +67,4 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID"))
                 .build();
     }
-
-
-
 }

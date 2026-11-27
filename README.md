@@ -15,13 +15,14 @@ Based on the current implementation:
 - **Current-user profile** retrieval.
 - **User discovery** by username prefix.
 - **Conversation inbox** with recent-message previews.
-- **Persistent one-to-one messaging** backed by MySQL.
+- **Persistent one-to-one and group messaging** backed by MySQL.
+- **Group management** with creator/admin roles, member lists, and group details.
 - **Message history** with a 50-message retrieval window and a `before` cursor parameter.
-- **Live message delivery** over an authenticated WebSocket connection.
+- **Live direct and group message delivery** over an authenticated WebSocket connection.
 - **CSRF protection** for state-changing HTTP requests.
 - **Responsive React interface** with a dark, muted visual direction.
 
-The current backend is focused on direct messages. Features such as group chats, file attachments, voice/video calls, end-to-end encryption, and message editing/deletion are not documented as implemented in this repository.
+File attachments, voice/video calls, end-to-end encryption, and message editing/deletion are not currently implemented.
 
 ## Tech Stack
 
@@ -107,7 +108,7 @@ Configure database credentials using environment variables:
 | Variable | Description | Default |
 |---|---|---|
 | `DB_USER` | MySQL username | `root` |
-| `DB_PASSWORD` | MySQL password | `root` |
+| `DB_PASSWORD` | MySQL password | No default; set explicitly |
 
 For example, set these in the shell before starting the backend:
 
@@ -145,17 +146,9 @@ npm install
 npm run dev
 ```
 
-Vite prints the local development URL in the terminal (typically `http://localhost:5173`).
+The Vite development server uses `http://localhost:3000`.
 
-If the backend runs on a different origin, create `frontend/.env.local`:
-
-```env
-VITE_API_BASE_URL=http://localhost:8080
-```
-
-Restart the Vite dev server after changing environment variables.
-
-The frontend uses cookie-based sessions, so the backend must allow the frontend origin and credentials in its security/CORS configuration when they are on different origins. The backend's configured allowed frontend origins must include the actual frontend origin.
+The Vite development server proxies `/api` and `/ws` to the local Spring Boot server at `http://localhost:8080`, so leave `VITE_API_BASE_URL` unset for the default local setup. Set `DB_USER` and `DB_PASSWORD` in the shell before starting the backend; no database password is committed as a default.
 
 ## API Overview
 
@@ -172,6 +165,12 @@ The REST API is rooted at `/api`.
 | GET | `/api/conversations` | Get the current user's recent conversations | Authenticated |
 | GET | `/api/message/{peer}?before={id}` | Retrieve message history with a user | Authenticated |
 | POST | `/api/message` | Send a direct message | Authenticated |
+| GET | `/api/groups` | List the signed-in user's groups | Authenticated |
+| POST | `/api/groups` | Create a group | Authenticated |
+| GET | `/api/groups/{groupId}` | Get group details | Authenticated |
+| GET | `/api/groups/{groupId}/members` | List group members | Authenticated |
+| GET | `/api/groups/{groupId}/messages?before={id}` | Retrieve group message history | Authenticated |
+| POST | `/api/groups/{groupId}/messages` | Send a group message | Authenticated |
 
 ### Send a message
 
@@ -202,7 +201,7 @@ The backend exposes a native WebSocket endpoint:
 /ws
 ```
 
-The connection is associated with the authenticated HTTP session. When a message is saved, the backend publishes its JSON representation to connected sessions belonging to the sender and recipient.
+The connection is associated with the authenticated HTTP session. When a direct or group message is saved, the backend publishes its JSON representation to eligible authenticated member sessions.
 
 Use the same host as the backend and preserve the session cookie during the WebSocket handshake. For local development, this is typically:
 
@@ -243,9 +242,9 @@ From the `backend/` directory:
 
 ## Current Scope
 
-OrbitMessenger currently implements authenticated direct messaging with persistent message history and WebSocket-based live delivery. The feature set and setup instructions in this README reflect the code currently present in the repository.
+OrbitMessenger implements authenticated direct and group messaging with persistent history and WebSocket-based live delivery. Potential future directions include media sharing, richer delivery/read states, and expanded profile controls.
 
-Potential future directions include group conversations, media sharing, richer delivery/read states, and expanded profile controls.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the Railway deployment architecture and production environment variables.
 
 ## Contributing
 
