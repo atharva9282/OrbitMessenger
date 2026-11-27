@@ -18,7 +18,7 @@ export default function AppLayout({ user, onLogout, error, onError, onDismissErr
   const [createOpen, setCreateOpen] = useState(false);
   const [detailsId, setDetailsId] = useState(null);
   const conversations = useConversations(user, onError);
-  const messages = useMessages(onError, conversations.updatePreview);
+  const messages = useMessages(user, onError, conversations.updatePreview);
   const receiveConversationEvent = conversations.receiveMessage;
   const receiveActiveMessage = messages.receiveMessage;
   const setSearch = conversations.setSearch;

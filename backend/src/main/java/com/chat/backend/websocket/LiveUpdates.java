@@ -85,10 +85,10 @@ public class LiveUpdates extends TextWebSocketHandler {
                         return;
                     }
 
-                    var principal = session.getPrincipal();
-                    if (principal == null || !memberUsernames.contains(principal.getName())) {
-                        return;
-                    }
+                    var name = session.getPrincipal().getName();
+//                    if (principal == null || !memberUsernames.contains(principal.getName())) {
+//                        return;
+//                    }
 
                     try {
                         session.sendMessage(payload);

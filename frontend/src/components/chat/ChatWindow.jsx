@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Avatar from "../common/Avatar";
 
 const timeLabel = (value) => {
@@ -84,6 +84,16 @@ function MessageList({
       height: container?.scrollHeight || 0,
     };
   }, [messages, loading]);
+  useEffect(() => {
+    if (!group || !import.meta.env.DEV || window.localStorage.getItem("orbit:debug-group-messages") !== "1") return;
+    console.debug("[Orbit group rendering]", {
+      authenticatedUsername: ownUsername,
+      rows: messages.slice(0, 5).map((message) => {
+        const sender = typeof message.sender === "string" ? message.sender.trim() : String(message.sender?.username ?? message.senderUsername ?? "").trim();
+        return { id: message.id, sender: message.sender, senderType: typeof message.sender, own: Boolean(sender && String(ownUsername ?? "").trim() && sender === String(ownUsername).trim()), keys: Object.keys(message) };
+      }),
+    });
+  }, [group, messages, ownUsername]);
   if (loading)
     return (
       <div className="message-loading">
@@ -103,15 +113,16 @@ function MessageList({
         </button>
       )}
       {messages.map((message, index) => {
-        const own =
-          String(message.sender ?? "").trim() ===
-          String(ownUsername ?? "").trim();
+        const senderUsername = typeof message.sender === "string"
+          ? message.sender.trim()
+          : String(message.sender?.username ?? message.senderUsername ?? "").trim();
+        const own = Boolean(senderUsername && String(ownUsername ?? "").trim() && senderUsername === String(ownUsername).trim());
         const previous = messages[index - 1];
         const showDate =
           !previous || fullDate(previous.sentAt) !== fullDate(message.sentAt);
 
         const isNewSenderGroup =
-          !previous || previous.sender !== message.sender || showDate;
+          !previous || String(previous.sender?.username ?? previous.sender ?? previous.senderUsername ?? "").trim() !== senderUsername || showDate;
 
         return (
           <div className="message-row" key={message.id}>
@@ -326,7 +337,7 @@ export default function ChatWindow({
           ownUsername={me.username}
           loading={loading}
           onFind={onFind}
-          group={active.type === "GROUP"}
+          group={active.type === "GROUP" || active.groupId != null || String(active.id || "").startsWith("group:")}
           loadingOlder={loadingOlder}
           canLoadOlder={canLoadOlder}
           onLoadOlder={onLoadOlder}

@@ -1,14 +1,20 @@
 import { useCallback, useRef, useState } from "react";
 import { chatService } from "../services/chat";
-import { groupService } from "../services/group";
+import { groupService, normalizeGroupMessage } from "../services/group";
 
 function mergeMessages(first, second) {
   const unique = new Map();
-  [...first, ...second].forEach((message) => unique.set(String(message.id), message));
+  [...first, ...second].forEach((message) => {
+    const id = String(message.id);
+    const previous = unique.get(id) || {};
+    const defined = Object.fromEntries(Object.entries(message).filter(([, value]) => value !== undefined && value !== null && value !== ""));
+    unique.set(id, { ...previous, ...defined });
+  });
   return [...unique.values()].sort((a, b) => Number(a.id) - Number(b.id));
 }
 
-export default function useMessages(handleError, updatePreview) {
+export default function useMessages(user, handleError, updatePreview) {
+  const username = user?.username;
   const [active, setActive] = useState(null);
   const activeRef = useRef(null);
   const requestRef = useRef(0);
@@ -20,7 +26,10 @@ export default function useMessages(handleError, updatePreview) {
   const [error, setError] = useState("");
 
   const open = useCallback(async (conversation) => {
-    const normalized = conversation.type === "DIRECT" || conversation.type === "GROUP"
+    const isGroup = conversation.type === "GROUP" || conversation.groupId != null || String(conversation.id || "").startsWith("group:");
+    const normalized = isGroup
+      ? { ...conversation, type: "GROUP" }
+      : conversation.type === "DIRECT"
       ? conversation
       : { ...conversation, type: "DIRECT", id: `dm:${conversation.username}`, title: conversation.displayName, person: conversation };
     const requestId = ++requestRef.current;
@@ -34,10 +43,23 @@ export default function useMessages(handleError, updatePreview) {
       const history = normalized.type === "GROUP"
         ? await groupService.history(normalized.groupId)
         : await chatService.history(normalized.person.username);
+      if (import.meta.env.DEV && normalized.type === "GROUP" && window.localStorage.getItem("orbit:debug-group-messages") === "1") {
+        console.debug("[Orbit group history]", {
+          groupId: normalized.groupId,
+          authenticatedUsername: username,
+          messages: history.slice(0, 5).map((message) => ({
+            id: message.id,
+            sender: message.sender,
+            senderType: typeof message.sender,
+            senderDisplayName: message.senderDisplayName,
+            keys: Object.keys(message),
+          })),
+        });
+      }
       if (requestRef.current === requestId) setMessages((current) => mergeMessages(history, current));
     } catch (err) { handleError(err); }
     finally { if (requestRef.current === requestId) setLoading(false); }
-  }, [handleError]);
+  }, [handleError, username]);
 
   const receiveMessage = useCallback((message, groupId) => {
     const current = activeRef.current;
@@ -45,7 +67,10 @@ export default function useMessages(handleError, updatePreview) {
     const matches = current.type === "GROUP"
       ? String(current.groupId) === String(groupId)
       : [message.sender, message.recipient].includes(current.person.username);
-    if (matches) setMessages((items) => mergeMessages(items, [message]));
+    if (matches) {
+      const normalized = current.type === "GROUP" ? normalizeGroupMessage(message) : message;
+      setMessages((items) => mergeMessages(items, [normalized]));
+    }
   }, []);
 
   const send = useCallback(async (body) => {
