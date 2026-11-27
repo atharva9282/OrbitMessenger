@@ -3,6 +3,7 @@ package com.chat.backend.config;
 import com.chat.backend.entity.Account;
 import com.chat.backend.repo.AccountRepository;
 import com.chat.backend.websocket.LiveUpdates;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -39,8 +46,37 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain security(HttpSecurity http, LiveUpdates live) throws Exception {
+    CorsConfigurationSource corsConfigurationSource(@Value("${app.frontend-origins:http://localhost:3000}") String[] frontendOrigins)
+    {
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(
+                Arrays.stream(frontendOrigins)
+                        .map(String::trim)
+                        .filter(origin -> !origin.isBlank())
+                        .toList()
+        );
+
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "PATCH",
+                "DELETE", "OPTIONS"
+        ));
+
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
+    @Bean
+    public SecurityFilterChain security(HttpSecurity http, LiveUpdates live, CorsConfigurationSource corsConfigurationSource) throws Exception {
         return http
+                .cors(cors->cors.configurationSource(corsConfigurationSource))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/csrf", "/api/register", "/api/login", "/error").permitAll()
