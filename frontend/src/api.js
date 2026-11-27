@@ -84,10 +84,8 @@ export async function login(username, password) {
         ? "That username and password do not match."
         : `Sign in failed (${response.status}).`,
     );
-  csrf = null;
 }
 
 export async function logout() {
-  csrf = null;
   return api("/api/logout", { method: "POST" });
 }
