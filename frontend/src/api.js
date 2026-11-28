@@ -2,6 +2,7 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 async function readCsrf() {
   const response = await fetch(`${API_BASE}/api/csrf`, {
+    method: "GET",
     credentials: "include",
     cache: "no-store",
   });
@@ -12,14 +13,14 @@ async function readCsrf() {
 
   const data = await response.json();
 
-  const token = data.token || data["token: "];
-  const headerName = data.headerName || data["headerName: "];
-
-  if (!token || !headerName) {
+  if (!data.token || !data.headerName) {
     throw new Error("Invalid CSRF token response.");
   }
 
-  return { token, headerName };
+  return {
+    token: data.token,
+    headerName: data.headerName,
+  };
 }
 
 export async function api(path, options = {}) {
@@ -39,7 +40,6 @@ export async function api(path, options = {}) {
     credentials: "include",
   });
   if (response.status === 401) {
-    csrf = null;
     const error = new Error("Your session has ended. Please sign in again.");
     error.status = 401;
     throw error;

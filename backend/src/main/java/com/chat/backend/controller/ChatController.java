@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -25,9 +24,9 @@ public class ChatController {
     }
 
     @GetMapping("/csrf")
-    public Map<String, String> csrf(CsrfToken token)
+    public CsrfToken csrf(CsrfToken token)
     {
-        return Map.of("token: ", token.getToken(), "headerName: ",token.getHeaderName());
+        return token;
     }
 
     @PostMapping("/register")
